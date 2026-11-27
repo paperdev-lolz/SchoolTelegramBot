@@ -476,26 +476,85 @@ public class SchoolBot extends TelegramLongPollingBot {
 
         String[] parts = text.split("\\s+", 2);
         if (parts.length < 2 || parts[1].isBlank()) {
-            sendMessage(chatId, "E'lon yuborish tartibi:\n/elon <xabar matni>\n\nMasalan:\n/elon Ertaga maktabimizda sport musobaqasi bo'lib o'tadi.");
+            String usage = "E'lon yuborish tartibi:\n\n"
+                    + "1. Butun maktabga:\n"
+                    + "/elon <xabar matni>\n"
+                    + "Masalan: /elon Ertaga darslar soat 08:00 da boshlanadi.\n\n"
+                    + "2. Aniq bir sinfga:\n"
+                    + "/elon <xabar matni> <sinf>\n"
+                    + "Masalan: /elon Ertaga 3-soat dars bo'lmaydi 8-A\n"
+                    + "(yoki: /elon 8-A Ertaga 3-soat dars bo'lmaydi)";
+            sendMessage(chatId, usage);
             return;
         }
 
-        String announcement = parts[1].trim();
-        String broadcastText = "E'lon!\n\n" + announcement + "\n\n— Maktab ma'muriyati";
+        String content = parts[1].trim();
+        String targetClass = null;
+        String announcement = content;
 
+        // 1. Check if the last word is a valid class name (e.g. "/elon Ertaga 3-soat Kimyo bo'lmaydi 8-A")
+        int lastSpaceIndex = content.lastIndexOf(' ');
+        if (lastSpaceIndex != -1) {
+            String lastWord = content.substring(lastSpaceIndex + 1).trim();
+            String parsed = scheduleService.parseClassName(lastWord);
+            if (parsed != null && scheduleService.hasClass(parsed)) {
+                targetClass = parsed;
+                announcement = content.substring(0, lastSpaceIndex).trim();
+            }
+        }
+
+        // 2. If not found at the end, check if the first word is a class name (e.g. "/elon 8-A Ertaga 3-soat...")
+        if (targetClass == null) {
+            int firstSpaceIndex = content.indexOf(' ');
+            if (firstSpaceIndex != -1) {
+                String firstWord = content.substring(0, firstSpaceIndex).trim();
+                String parsed = scheduleService.parseClassName(firstWord);
+                if (parsed != null && scheduleService.hasClass(parsed)) {
+                    targetClass = parsed;
+                    announcement = content.substring(firstSpaceIndex + 1).trim();
+                }
+            }
+        }
+
+        if (announcement.isBlank()) {
+            sendMessage(chatId, "E'lon matni bo'sh bo'lishi mumkin emas.");
+            return;
+        }
+
+        // Filter target recipients based on class or whole school
         Map<Long, UserProfile> allProfiles = userService.getAllProfiles();
-        int total = allProfiles.size();
+        List<Long> targetRecipients = new ArrayList<>();
+
+        for (Map.Entry<Long, UserProfile> entry : allProfiles.entrySet()) {
+            UserProfile p = entry.getValue();
+            if (targetClass == null) {
+                targetRecipients.add(entry.getKey());
+            } else if (targetClass.equalsIgnoreCase(p.getClassName())) {
+                targetRecipients.add(entry.getKey());
+            }
+        }
+
+        int total = targetRecipients.size();
         if (total == 0) {
-            sendMessage(chatId, "Ro'yxatdan o'tgan foydalanuvchilar topilmadi.");
+            if (targetClass != null) {
+                sendMessage(chatId, targetClass + " sinfida hali hech qaysi o'quvchi ro'yxatdan o'tmagan.");
+            } else {
+                sendMessage(chatId, "Ro'yxatdan o'tgan foydalanuvchilar topilmadi.");
+            }
             return;
         }
 
-        sendMessage(chatId, "E'lon " + total + " ta foydalanuvchiga yuborilmoqda...");
+        String broadcastText = (targetClass != null)
+                ? targetClass + " sinfi uchun e'lon!\n\n" + announcement + "\n\n— Maktab ma'muriyati"
+                : "E'lon!\n\n" + announcement + "\n\n— Maktab ma'muriyati";
+
+        String scope = (targetClass != null) ? targetClass + " sinfining " : "barcha ";
+        sendMessage(chatId, "E'lon " + scope + total + " ta foydalanuvchisiga yuborilmoqda...");
 
         int sent = 0;
         int failed = 0;
 
-        for (Long targetChatId : allProfiles.keySet()) {
+        for (Long targetChatId : targetRecipients) {
             try {
                 SendMessage sm = new SendMessage();
                 sm.setChatId(targetChatId.toString());
@@ -509,6 +568,7 @@ public class SchoolBot extends TelegramLongPollingBot {
         }
 
         String report = "E'lon tarqatish yakunlandi.\n\n"
+                + (targetClass != null ? "Sinf: " + targetClass + "\n" : "Qamrov: Butun maktab\n")
                 + "Yetkazildi: " + sent + " ta\n"
                 + "Yetib bormadi (bot bloklangan): " + failed + " ta\n"
                 + "Jami: " + total + " ta";
@@ -594,7 +654,7 @@ public class SchoolBot extends TelegramLongPollingBot {
 
         if (isAdmin(chatId)) {
             sb.append("\n\nMa'mur buyruqlari:\n")
-                    .append("/elon <matn> - Maktab bo'yicha e'lon yuborish\n")
+                    .append("/elon <matn> [sinf] - Maktab yoki aniq bir sinfga e'lon yuborish\n")
                     .append("/statistika - Bot statistikasi");
         }
 
