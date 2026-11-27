@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
+import org.telegram.telegrambots.meta.api.methods.AnswerInlineQuery;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -27,6 +28,10 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
+import org.telegram.telegrambots.meta.api.objects.inlinequery.InlineQuery;
+import org.telegram.telegrambots.meta.api.objects.inlinequery.inputmessagecontent.InputTextMessageContent;
+import org.telegram.telegrambots.meta.api.objects.inlinequery.result.InlineQueryResult;
+import org.telegram.telegrambots.meta.api.objects.inlinequery.result.InlineQueryResultArticle;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -85,7 +90,9 @@ public class SchoolBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         try {
-            if (update.hasCallbackQuery()) {
+            if (update.hasInlineQuery()) {
+                handleInlineQuery(update.getInlineQuery());
+            } else if (update.hasCallbackQuery()) {
                 handleCallbackQuery(update.getCallbackQuery());
             } else if (update.hasMessage() && update.getMessage().hasText()) {
                 handleTextMessage(update.getMessage());
@@ -93,6 +100,178 @@ public class SchoolBot extends TelegramLongPollingBot {
         } catch (Exception e) {
             log.error("Update qayta ishlashda xatolik", e);
         }
+    }
+
+    private void handleInlineQuery(InlineQuery inlineQuery) {
+        String query = inlineQuery.getQuery() != null ? inlineQuery.getQuery().trim() : "";
+        Long userId = inlineQuery.getFrom().getId();
+        UserProfile profile = userService.getProfile(userId);
+
+        List<InlineQueryResult> results = new ArrayList<>();
+        LocalDate today = LocalDate.now(SCHOOL_ZONE);
+        DayOfWeek todayDow = today.getDayOfWeek();
+        LocalDate tomorrow = today.plusDays(1);
+        DayOfWeek tomorrowDow = (tomorrow.getDayOfWeek() == DayOfWeek.SUNDAY) ? DayOfWeek.MONDAY : tomorrow.getDayOfWeek();
+
+        String parsedClass = scheduleService.parseClassName(query);
+
+        if (parsedClass != null && scheduleService.hasClass(parsedClass)) {
+            // User typed specific class: e.g. "@bot 8-a", "@bot 7b"
+            addClassInlineResults(results, parsedClass, today, todayDow, tomorrowDow);
+        } else if (query.equalsIgnoreCase("vaqt") || query.equalsIgnoreCase("vaqtlar") || query.equalsIgnoreCase("qongiroq")) {
+            addBellTimingResults(results);
+        } else if (profile != null) {
+            // User has a registered class and query is empty: show their class schedule
+            addClassInlineResults(results, profile.getClassName(), today, todayDow, tomorrowDow);
+            addBellTimingResults(results);
+        } else {
+            // User not registered: show hints and sample class shortcuts
+            addHelpInlineResults(results, today, todayDow, tomorrowDow);
+        }
+
+        AnswerInlineQuery answer = new AnswerInlineQuery();
+        answer.setInlineQueryId(inlineQuery.getId());
+        answer.setResults(results);
+        answer.setCacheTime(15);
+        answer.setIsPersonal(true);
+
+        try {
+            execute(answer);
+        } catch (TelegramApiException e) {
+            log.warn("Inline query javobini yuborishda xatolik: {}", e.getMessage());
+        }
+    }
+
+    private void addClassInlineResults(List<InlineQueryResult> results,
+                                       String className,
+                                       LocalDate today,
+                                       DayOfWeek todayDow,
+                                       DayOfWeek tomorrowDow) {
+        // 1. Bugungi darslar
+        String todaySchedule;
+        if (todayDow == DayOfWeek.SUNDAY) {
+            todaySchedule = className + " sinfi — Bugun yakshanba (dam olish kuni).\nDushanba kungi dars jadvali:\n\n"
+                    + scheduleService.getDaySchedule(className, DayOfWeek.MONDAY);
+        } else {
+            todaySchedule = className + " sinfi — Bugungi dars jadvali (" + scheduleService.getDayName(todayDow) + "):\n\n"
+                    + scheduleService.getDaySchedule(className, todayDow);
+        }
+
+        List<String> todayLessons = scheduleService.getLessonsList(className, todayDow == DayOfWeek.SUNDAY ? DayOfWeek.MONDAY : todayDow);
+        String todayDesc = todayLessons.isEmpty() ? "Darslar belgilanmagan" : String.join(", ", todayLessons.subList(0, Math.min(3, todayLessons.size()))) + "...";
+
+        results.add(createArticle(
+                className + "_today",
+                className + " — Bugungi darslar",
+                todayDesc,
+                todaySchedule
+        ));
+
+        // 2. Ertangi darslar
+        String tomorrowSchedule = className + " sinfi — Ertangi dars jadvali (" + scheduleService.getDayName(tomorrowDow) + "):\n\n"
+                + scheduleService.getDaySchedule(className, tomorrowDow);
+        List<String> tomorrowLessons = scheduleService.getLessonsList(className, tomorrowDow);
+        String tomorrowDesc = tomorrowLessons.isEmpty() ? "Darslar belgilanmagan" : String.join(", ", tomorrowLessons.subList(0, Math.min(3, tomorrowLessons.size()))) + "...";
+
+        results.add(createArticle(
+                className + "_tomorrow",
+                className + " — Ertangi darslar",
+                tomorrowDesc,
+                tomorrowSchedule
+        ));
+
+        // 3. Haftalik jadval
+        String weekSchedule = scheduleService.getFullWeekSchedule(className);
+        results.add(createArticle(
+                className + "_week",
+                className + " — Haftalik to'liq jadval",
+                "Dushanbadan Shanbagacha haftalik dars jadvali",
+                weekSchedule
+        ));
+
+        // 4. Sumka anjomlari
+        String sumkaText = scheduleService.getBackpackChecklist(className, tomorrowDow);
+        results.add(createArticle(
+                className + "_sumka",
+                className + " — Sumka anjomlari (" + scheduleService.getDayName(tomorrowDow) + ")",
+                "Darsliklar va maxsus zarur buyumlar ro'yxati",
+                sumkaText
+        ));
+
+        // 5. Jonli dars holati
+        String liveText = scheduleService.getLiveStatusText(
+                className,
+                "morning",
+                todayDow,
+                LocalTime.now(SCHOOL_ZONE)
+        );
+        results.add(createArticle(
+                className + "_live",
+                className + " — Hozirgi dars holati",
+                "Ayni vaqtdagi dars va qolgan vaqt hisobi",
+                liveText
+        ));
+    }
+
+    private void addBellTimingResults(List<InlineQueryResult> results) {
+        results.add(createArticle(
+                "bell_morning",
+                "1-smena qo'ng'iroqlar jadvali (Ertalabki)",
+                "08:00 dan 13:10 gacha (45 daqiqa dars, 20 daqiqa katta tanaffus)",
+                scheduleService.getBellScheduleText("morning")
+        ));
+
+        results.add(createArticle(
+                "bell_afternoon",
+                "2-smena qo'ng'iroqlar jadvali (Tushdan keyingi)",
+                "13:15 dan 17:40 gacha (40 daqiqa dars, katta tanaffussiz)",
+                scheduleService.getBellScheduleText("afternoon")
+        ));
+    }
+
+    private void addHelpInlineResults(List<InlineQueryResult> results,
+                                      LocalDate today,
+                                      DayOfWeek todayDow,
+                                      DayOfWeek tomorrowDow) {
+        results.add(createArticle(
+                "hint_how_to",
+                "Sinf nomini kiriting (masalan: 8-A)",
+                "Format: @sakkizmaktabni_bot <sinf>",
+                "8-Maktab boti: dars jadvalini ulashish uchun sinf nomini kiriting.\nMasalan: @sakkizmaktabni_bot 8-A"
+        ));
+
+        String[] sampleClasses = {"5-A", "7-A", "8-A", "9-A", "11-A"};
+        for (String cls : sampleClasses) {
+            String sched = scheduleService.getDaySchedule(cls, todayDow == DayOfWeek.SUNDAY ? DayOfWeek.MONDAY : todayDow);
+            results.add(createArticle(
+                    "sample_" + cls,
+                    cls + " sinfi dars jadvali",
+                    "Ulashish uchun bosing",
+                    cls + " sinfi — Dars jadvali:\n\n" + sched
+            ));
+        }
+
+        addBellTimingResults(results);
+    }
+
+    private InlineQueryResultArticle createArticle(String id, String title, String description, String text) {
+        InlineQueryResultArticle article = new InlineQueryResultArticle();
+        article.setId(id);
+        article.setTitle(title);
+        article.setDescription(description);
+
+        InputTextMessageContent content = new InputTextMessageContent();
+        content.setMessageText(text);
+        article.setInputMessageContent(content);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        InlineKeyboardButton btn = new InlineKeyboardButton();
+        btn.setText("8-Maktab Botini ochish");
+        btn.setUrl("https://t.me/" + botUsername.replace("@", ""));
+        markup.setKeyboard(List.of(List.of(btn)));
+        article.setReplyMarkup(markup);
+
+        return article;
     }
 
     private void handleTextMessage(Message message) {
@@ -141,7 +320,8 @@ public class SchoolBot extends TelegramLongPollingBot {
                 + "/bugun - Bugungi darslar\n"
                 + "/ertaga - Ertangi darslar\n"
                 + "/vaqtlar - Qo'ng'iroqlar jadvali\n"
-                + "/sozlamalar - Sozlamalar"
+                + "/sozlamalar - Sozlamalar\n\n"
+                + "💡 Istalgan chatda dars jadvalini ulashish uchun: @" + botUsername.replace("@", "") + " " + profile.getClassName()
                 : "Boshlash uchun sinfingizni tanlang: /register");
         sendMessage(chatId, response);
     }
@@ -408,10 +588,12 @@ public class SchoolBot extends TelegramLongPollingBot {
                 .append("/vaqtlar - Qo'ng'iroqlar va dars vaqtlari\n")
                 .append("/sozlamalar - Profil va bildirishnomalarni sozlash\n")
                 .append("/myid - Telegram ID raqamingiz\n")
-                .append("/yordam - Ushbu yordam xabari\n");
+                .append("/yordam - Ushbu yordam xabari\n\n")
+                .append("💡 Inline rejim:\n")
+                .append("Istalgan chatda yoki guruhda @").append(botUsername.replace("@", "")).append(" 8-A deb yozib, dars jadvalini to'g'ridan-to'g'ri ulashishingiz mumkin!");
 
         if (isAdmin(chatId)) {
-            sb.append("\nMa'mur buyruqlari:\n")
+            sb.append("\n\nMa'mur buyruqlari:\n")
                     .append("/elon <matn> - Maktab bo'yicha e'lon yuborish\n")
                     .append("/statistika - Bot statistikasi");
         }
