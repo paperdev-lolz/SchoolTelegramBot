@@ -6,6 +6,7 @@ import java.util.Set;
 
 import org.paper.bot.SchoolBot;
 import org.paper.service.BellNotificationService;
+import org.paper.service.EveningReminderService;
 import org.paper.service.ScheduleService;
 import org.paper.service.UserService;
 import org.slf4j.Logger;
@@ -72,6 +73,10 @@ public class Main {
         BellNotificationService bellNotificationService =
                 new BellNotificationService(userService, bot::sendDirectMessage);
 
+        EveningReminderService eveningReminderService =
+                new EveningReminderService(userService, scheduleService, bot::sendDirectMessage);
+        bot.setEveningReminderService(eveningReminderService);
+
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
             botsApi.registerBot(bot);
@@ -79,8 +84,9 @@ public class Main {
             // Register Telegram slash command menu
             bot.registerCommands();
 
-            // Start bell scheduler
+            // Start background schedulers
             bellNotificationService.start();
+            eveningReminderService.start();
 
             log.info("8-Maktab boti muvaffaqiyatli ishga tushdi. Ro'yxatdan o'tgan foydalanuvchilar: {}", userService.getUserCount());
 
@@ -88,6 +94,7 @@ public class Main {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("Bot to'xtatilmoqda...");
                 bellNotificationService.stop();
+                eveningReminderService.stop();
             }));
 
             // Start lightweight HTTP health-check server if PORT is set (Render, Railway, Heroku)

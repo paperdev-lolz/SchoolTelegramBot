@@ -304,27 +304,17 @@ public class ScheduleService {
         return "Bugungi darslar yakunlandi.";
     }
 
-    public String getBackpackChecklist(String className, DayOfWeek dayOfWeek) {
-        if (isPrimaryGrade(className)) {
-            return className + " sinfi dars jadvali hali kiritilmagan (Tez kunda).";
+    public Map<String, String> getSpecialSuppliesForLessons(List<String> lessons) {
+        if (lessons == null || lessons.isEmpty()) {
+            return Collections.emptyMap();
         }
-
-        if (dayOfWeek == DayOfWeek.SUNDAY) {
-            return "Yakshanba — dam olish kuni.";
-        }
-
-        List<String> lessons = getLessonsList(className, dayOfWeek);
-        if (lessons.isEmpty()) {
-            return className + " sinfi uchun " + getDayName(dayOfWeek) + " kuni darslar belgilanmagan.";
-        }
-
         Set<String> uniqueSubjects = new LinkedHashSet<>(lessons);
         Map<String, String> specialSupplies = new LinkedHashMap<>();
 
         for (String subject : uniqueSubjects) {
             String lower = subject.toLowerCase();
             if (lower.contains("jismoniy")) {
-                specialSupplies.put("Jismoniy tarbiya", "Sport formasi va poyabzali (krossovka)");
+                specialSupplies.put("Jismoniy tarbiya", "Sport kiyimi va poyabzali (krossovka)");
             } else if (lower.contains("chizmachilik")) {
                 specialSupplies.put("Chizmachilik", "Chizmachilik daftari, sirkul, chizg'ich va qalam");
             } else if (lower.contains("tasviriy") || lower.contains("rasm")) {
@@ -345,6 +335,24 @@ public class ScheduleService {
                 specialSupplies.put("Kimyo", "Kimyo daftari");
             }
         }
+        return specialSupplies;
+    }
+
+    public String getBackpackChecklist(String className, DayOfWeek dayOfWeek) {
+        if (isPrimaryGrade(className)) {
+            return className + " sinfi dars jadvali hali kiritilmagan (Tez kunda).";
+        }
+
+        if (dayOfWeek == DayOfWeek.SUNDAY) {
+            return "Yakshanba — dam olish kuni.";
+        }
+
+        List<String> lessons = getLessonsList(className, dayOfWeek);
+        if (lessons.isEmpty()) {
+            return className + " sinfi uchun " + getDayName(dayOfWeek) + " kuni darslar belgilanmagan.";
+        }
+
+        Map<String, String> specialSupplies = getSpecialSuppliesForLessons(lessons);
 
         StringBuilder sb = new StringBuilder();
         sb.append("Sinf: ").append(className).append("\n");
@@ -368,6 +376,47 @@ public class ScheduleService {
         sb.append("\nHar kungi zarur buyumlar:\n");
         sb.append("• Kundalik daftari\n");
         sb.append("• Qalamdon (ruchka, oddiy qalam, o'chirg'ich, chizg'ich)");
+
+        return sb.toString();
+    }
+
+    public String getEveningReminderText(String className, String shift, DayOfWeek targetDay) {
+        if (isPrimaryGrade(className)) {
+            return null;
+        }
+        if (targetDay == DayOfWeek.SUNDAY) {
+            return null;
+        }
+
+        List<String> lessons = getLessonsList(className, targetDay);
+        if (lessons.isEmpty()) {
+            return null;
+        }
+
+        boolean isAfternoon = "afternoon".equalsIgnoreCase(shift);
+        String startTime = isAfternoon ? "13:15" : "08:00";
+        String shiftName = isAfternoon ? "2-smena (Tushdan keyingi)" : "1-smena (Ertalabki)";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Kechki eslatma — Ertangi kun tayyorgarligi:\n\n");
+        sb.append("Sinf: ").append(className).append(" (").append(shiftName).append(")\n");
+        sb.append("Ertaga (").append(getDayName(targetDay)).append(") darslari:\n");
+
+        for (int i = 0; i < lessons.size(); i++) {
+            sb.append(i + 1).append(". ").append(lessons.get(i)).append("\n");
+        }
+
+        Map<String, String> specialSupplies = getSpecialSuppliesForLessons(lessons);
+        sb.append("\nSumkaga solishni unutmang:\n");
+        if (!specialSupplies.isEmpty()) {
+            for (Map.Entry<String, String> entry : specialSupplies.entrySet()) {
+                sb.append("• ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+            }
+        }
+        sb.append("• Kundalik daftari va qalamdon\n\n");
+
+        sb.append("Dars boshlanishi: ").append(startTime).append(" da.\n");
+        sb.append("Ertangi darslaringizga omad tilaymiz!");
 
         return sb.toString();
     }

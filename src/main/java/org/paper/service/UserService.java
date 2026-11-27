@@ -40,13 +40,14 @@ public class UserService {
                         Long userId = Long.parseLong(entry.getKey());
                         JsonNode val = entry.getValue();
                         if (val.isTextual()) {
-                            cache.put(userId, new UserProfile(val.asText(), "morning", false));
+                            cache.put(userId, new UserProfile(val.asText(), "morning", false, true));
                         } else if (val.isObject()) {
                             String className = val.path("className").asText(null);
                             String shift = val.path("shift").asText("morning");
                             boolean bells = val.path("bellNotifications").asBoolean(false);
+                            boolean evening = val.path("eveningReminder").asBoolean(true);
                             if (className != null && !className.isBlank()) {
-                                cache.put(userId, new UserProfile(className, shift, bells));
+                                cache.put(userId, new UserProfile(className, shift, bells, evening));
                             }
                         }
                     } catch (NumberFormatException ignored) {
@@ -91,6 +92,14 @@ public class UserService {
         }
     }
 
+    public synchronized void toggleEveningReminder(Long userId) {
+        UserProfile profile = cache.get(userId);
+        if (profile != null) {
+            profile.setEveningReminder(!profile.isEveningReminder());
+            persistToFile();
+        }
+    }
+
     public synchronized void toggleShift(Long userId) {
         UserProfile profile = cache.get(userId);
         if (profile != null) {
@@ -119,6 +128,7 @@ public class UserService {
                 node.put("className", entry.getValue().getClassName());
                 node.put("shift", entry.getValue().getShift());
                 node.put("bellNotifications", entry.getValue().isBellNotifications());
+                node.put("eveningReminder", entry.getValue().isEveningReminder());
                 root.set(String.valueOf(entry.getKey()), node);
             }
 

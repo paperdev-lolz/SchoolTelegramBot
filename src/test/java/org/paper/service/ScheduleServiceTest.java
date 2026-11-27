@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ScheduleServiceTest {
@@ -100,5 +101,17 @@ class ScheduleServiceTest {
         assertTrue(checklist.contains("Darslik va daftarlar"));
         assertTrue(checklist.contains("Kundalik"));
         assertTrue(checklist.contains("Qalamdon"));
+    }
+
+    @Test
+    void testEveningReminderText() {
+        String reminder = scheduleService.getEveningReminderText("7-A", "morning", DayOfWeek.TUESDAY);
+        assertNotNull(reminder);
+        assertTrue(reminder.contains("Kechki eslatma"));
+        assertTrue(reminder.contains("Seshanba"));
+        assertTrue(reminder.contains("08:00"));
+
+        // Sunday target should return null as no school on Sunday
+        assertNull(scheduleService.getEveningReminderText("7-A", "morning", DayOfWeek.SUNDAY));
     }
 }

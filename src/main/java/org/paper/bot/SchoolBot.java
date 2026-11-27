@@ -6,13 +6,13 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
 import org.paper.model.UserProfile;
+import org.paper.service.EveningReminderService;
 import org.paper.service.ScheduleService;
 import org.paper.service.UserService;
 import org.slf4j.Logger;
@@ -40,6 +40,7 @@ public class SchoolBot extends TelegramLongPollingBot {
     private final UserService userService;
     private final ScheduleService scheduleService;
     private final Set<Long> adminChatIds;
+    private EveningReminderService eveningReminderService;
 
     public SchoolBot(String botToken,
                      String botUsername,
@@ -53,6 +54,10 @@ public class SchoolBot extends TelegramLongPollingBot {
         this.adminChatIds = adminChatIds != null ? adminChatIds : Collections.emptySet();
     }
 
+    public void setEveningReminderService(EveningReminderService eveningReminderService) {
+        this.eveningReminderService = eveningReminderService;
+    }
+
     public void registerCommands() {
         List<BotCommand> commands = List.of(
                 new BotCommand("/jadval", "Dars jadvalini ko'rish"),
@@ -61,6 +66,7 @@ public class SchoolBot extends TelegramLongPollingBot {
                 new BotCommand("/bugun", "Bugungi darslar"),
                 new BotCommand("/ertaga", "Ertangi darslar"),
                 new BotCommand("/hafta", "Haftalik dars jadvali"),
+                new BotCommand("/eslatma", "Kechki eslatmani ko'rish"),
                 new BotCommand("/vaqtlar", "Qo'ng'iroqlar va dars vaqtlari"),
                 new BotCommand("/sinf", "Mening sinfim va smenam"),
                 new BotCommand("/register", "Sinfni tanlash yoki almashtirish"),
@@ -109,6 +115,7 @@ public class SchoolBot extends TelegramLongPollingBot {
             case "/hafta", "/haftalik" -> handleScheduleCommand(chatId, "week");
             case "/hozir", "/status", "/live" -> handleLiveStatusCommand(chatId, null);
             case "/sumka", "/backpack" -> handleBackpackCommand(chatId, null, "tomorrow");
+            case "/eslatma", "/testeslatma" -> handlePreviewReminderCommand(chatId);
             case "/sinf", "/profil" -> handleClassInfoCommand(chatId);
             case "/vaqtlar", "/qongiroq" -> handleBellScheduleCommand(chatId);
             case "/sozlamalar", "/settings" -> sendSettingsMessage(chatId, null);
@@ -123,12 +130,13 @@ public class SchoolBot extends TelegramLongPollingBot {
     private void handleStartCommand(Long chatId) {
         UserProfile profile = userService.getProfile(chatId);
         String response = "Assalomu alaykum. 8-maktab axborot botiga xush kelibsiz.\n\n"
-                + "Bot orqali dars jadvali, jonli dars holati, sumka tayyorlash va qo'ng'iroqlar vaqtini bilib olishingiz mumkin.\n\n"
+                + "Bot orqali dars jadvali, jonli dars holati, sumka yordamchisi va kechki eslatmalarni bilib olishingiz mumkin.\n\n"
                 + (profile != null
                 ? "Siz ulangan sinf: " + profile.getClassName() + " (" + profile.getShiftDisplayName() + ")\n\n"
                 + "Asosiy buyruqlar:\n"
                 + "/hozir - Hozirgi dars holati\n"
                 + "/sumka - Ertangi sumka anjomlari\n"
+                + "/eslatma - Ertangi kun kechki eslatmasi\n"
                 + "/jadval - Dars jadvali\n"
                 + "/bugun - Bugungi darslar\n"
                 + "/ertaga - Ertangi darslar\n"
@@ -227,6 +235,27 @@ public class SchoolBot extends TelegramLongPollingBot {
         }
     }
 
+    private void handlePreviewReminderCommand(Long chatId) {
+        UserProfile profile = userService.getProfile(chatId);
+        if (profile == null) {
+            sendMessage(chatId, "Sinf tanlanmagan. Iltimos, avval /register orqali sinfingizni tanlang.");
+            return;
+        }
+
+        if (eveningReminderService != null) {
+            boolean sent = eveningReminderService.sendPreviewReminder(chatId);
+            if (!sent) {
+                sendMessage(chatId, "Ertangi kun uchun dars jadvali topilmadi yoki kiritilmagan.");
+            }
+        } else {
+            LocalDate today = LocalDate.now(SCHOOL_ZONE);
+            LocalDate tomorrow = today.plusDays(1);
+            DayOfWeek targetDow = (tomorrow.getDayOfWeek() == DayOfWeek.SUNDAY) ? DayOfWeek.MONDAY : tomorrow.getDayOfWeek();
+            String text = scheduleService.getEveningReminderText(profile.getClassName(), profile.getShift(), targetDow);
+            sendMessage(chatId, text != null ? text : "Ertangi kun uchun darslar belgilanmagan.");
+        }
+    }
+
     private void handleClassInfoCommand(Long chatId) {
         UserProfile profile = userService.getProfile(chatId);
         if (profile == null) {
@@ -237,7 +266,8 @@ public class SchoolBot extends TelegramLongPollingBot {
         String text = "Sizning ma'lumotlaringiz:\n\n"
                 + "Sinf: " + profile.getClassName() + "\n"
                 + "Smena: " + profile.getShiftDisplayName() + "\n"
-                + "Qo'ng'iroq bildirishnomalari: " + (profile.isBellNotifications() ? "Yoqilgan" : "O'chirilgan") + "\n\n"
+                + "Qo'ng'iroq bildirishnomalari: " + (profile.isBellNotifications() ? "Yoqilgan" : "O'chirilgan") + "\n"
+                + "Kechki eslatma (19:00 - 20:00): " + (profile.isEveningReminder() ? "Yoqilgan" : "O'chirilgan") + "\n\n"
                 + "O'zgartirish uchun: /sozlamalar";
         sendMessage(chatId, text);
     }
@@ -317,6 +347,7 @@ public class SchoolBot extends TelegramLongPollingBot {
         int morningCount = 0;
         int afternoonCount = 0;
         int bellEnabledCount = 0;
+        int eveningReminderCount = 0;
         Map<String, Integer> classCounts = new TreeMap<>();
 
         for (UserProfile p : allProfiles.values()) {
@@ -327,6 +358,9 @@ public class SchoolBot extends TelegramLongPollingBot {
             }
             if (p.isBellNotifications()) {
                 bellEnabledCount++;
+            }
+            if (p.isEveningReminder()) {
+                eveningReminderCount++;
             }
             String c = p.getClassName() != null ? p.getClassName() : "Noma'lum";
             classCounts.put(c, classCounts.getOrDefault(c, 0) + 1);
@@ -340,10 +374,12 @@ public class SchoolBot extends TelegramLongPollingBot {
             int morningPct = (int) Math.round((morningCount * 100.0) / total);
             int afternoonPct = (int) Math.round((afternoonCount * 100.0) / total);
             int bellPct = (int) Math.round((bellEnabledCount * 100.0) / total);
+            int eveningPct = (int) Math.round((eveningReminderCount * 100.0) / total);
 
             sb.append("• 1-smena: ").append(morningCount).append(" ta (").append(morningPct).append("%)\n");
             sb.append("• 2-smena: ").append(afternoonCount).append(" ta (").append(afternoonPct).append("%)\n");
-            sb.append("• Bildirishnomalar yoqilgan: ").append(bellEnabledCount).append(" ta (").append(bellPct).append("%)\n\n");
+            sb.append("• Qo'ng'iroq bildirishnomalari: ").append(bellEnabledCount).append(" ta (").append(bellPct).append("%)\n");
+            sb.append("• Kechki eslatmalar yoqilgan: ").append(eveningReminderCount).append(" ta (").append(eveningPct).append("%)\n\n");
 
             sb.append("Sinflar bo'yicha taqsimot:\n");
             List<Map.Entry<String, Integer>> sorted = new ArrayList<>(classCounts.entrySet());
@@ -363,6 +399,7 @@ public class SchoolBot extends TelegramLongPollingBot {
                 .append("/jadval - Dars jadvalini ko'rish\n")
                 .append("/hozir - Hozirgi dars holati va vaqt hisobi\n")
                 .append("/sumka - Ertangi darslar va sumka anjomlari\n")
+                .append("/eslatma - Ertangi kun kechki eslatmasini olish\n")
                 .append("/bugun - Bugungi darslar\n")
                 .append("/ertaga - Ertangi darslar\n")
                 .append("/hafta - Haftalik to'liq jadval\n")
@@ -429,7 +466,8 @@ public class SchoolBot extends TelegramLongPollingBot {
             String shift = parts[1];
             boolean bells = Boolean.parseBoolean(parts[2]);
 
-            UserProfile profile = new UserProfile(className, shift, bells);
+            // By default, evening reminder is enabled (true)
+            UserProfile profile = new UserProfile(className, shift, bells, true);
             userService.saveProfile(chatId, profile);
 
             String breakInfo = "afternoon".equalsIgnoreCase(shift)
@@ -439,7 +477,8 @@ public class SchoolBot extends TelegramLongPollingBot {
             String text = "Ro'yxatdan o'tish yakunlandi.\n\n"
                     + "Sinf: " + className + "\n"
                     + "Smena: " + profile.getShiftDisplayName() + "\n"
-                    + "Bildirishnomalar: " + (bells ? "Yoqilgan" : "O'chirilgan") + "\n\n"
+                    + "Qo'ng'iroq bildirishnomalari: " + (bells ? "Yoqilgan" : "O'chirilgan") + "\n"
+                    + "Kechki eslatma (19:00 - 20:00): Yoqilgan\n\n"
                     + breakInfo;
 
             InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
@@ -482,6 +521,9 @@ public class SchoolBot extends TelegramLongPollingBot {
             sendSettingsMessage(chatId, messageId);
         } else if (data.equals("toggle_bell")) {
             userService.toggleBellNotifications(chatId);
+            sendSettingsMessage(chatId, messageId);
+        } else if (data.equals("toggle_evening")) {
+            userService.toggleEveningReminder(chatId);
             sendSettingsMessage(chatId, messageId);
         }
     }
@@ -719,7 +761,8 @@ public class SchoolBot extends TelegramLongPollingBot {
         String text = "Sozlamalar:\n\n"
                 + "Sinf: " + profile.getClassName() + "\n"
                 + "Smena: " + profile.getShiftDisplayName() + "\n"
-                + "Bildirishnomalar: " + (profile.isBellNotifications() ? "Yoqilgan" : "O'chirilgan");
+                + "Qo'ng'iroq bildirishnomalari: " + (profile.isBellNotifications() ? "Yoqilgan" : "O'chirilgan") + "\n"
+                + "Kechki eslatma (19:00 - 20:00): " + (profile.isEveningReminder() ? "Yoqilgan" : "O'chirilgan");
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
@@ -727,8 +770,12 @@ public class SchoolBot extends TelegramLongPollingBot {
         rows.add(List.of(createButton("Sinfni o'zgartirish", "reg_group:back")));
         rows.add(List.of(createButton("Smenani almashtirish", "toggle_shift")));
         rows.add(List.of(createButton(
-                profile.isBellNotifications() ? "Bildirishnomani o'chirish" : "Bildirishnomani yoqish",
+                profile.isBellNotifications() ? "Qo'ng'iroq: O'chirish" : "Qo'ng'iroq: Yoqish",
                 "toggle_bell"
+        )));
+        rows.add(List.of(createButton(
+                profile.isEveningReminder() ? "Kechki eslatma: O'chirish" : "Kechki eslatma: Yoqish",
+                "toggle_evening"
         )));
         rows.add(List.of(createButton("Dars jadvali", "sch_day:today")));
 
