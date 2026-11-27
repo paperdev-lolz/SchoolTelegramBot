@@ -2,9 +2,15 @@ package org.paper.bot;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import org.paper.model.UserProfile;
 import org.paper.service.ScheduleService;
@@ -33,17 +39,25 @@ public class SchoolBot extends TelegramLongPollingBot {
     private final String botUsername;
     private final UserService userService;
     private final ScheduleService scheduleService;
+    private final Set<Long> adminChatIds;
 
-    public SchoolBot(String botToken, String botUsername, UserService userService, ScheduleService scheduleService) {
+    public SchoolBot(String botToken,
+                     String botUsername,
+                     UserService userService,
+                     ScheduleService scheduleService,
+                     Set<Long> adminChatIds) {
         this.botToken = botToken;
         this.botUsername = botUsername;
         this.userService = userService;
         this.scheduleService = scheduleService;
+        this.adminChatIds = adminChatIds != null ? adminChatIds : Collections.emptySet();
     }
 
     public void registerCommands() {
         List<BotCommand> commands = List.of(
                 new BotCommand("/jadval", "Dars jadvalini ko'rish"),
+                new BotCommand("/hozir", "Hozirgi dars holati"),
+                new BotCommand("/sumka", "Ertangi sumka anjomlari"),
                 new BotCommand("/bugun", "Bugungi darslar"),
                 new BotCommand("/ertaga", "Ertangi darslar"),
                 new BotCommand("/hafta", "Haftalik dars jadvali"),
@@ -93,9 +107,14 @@ public class SchoolBot extends TelegramLongPollingBot {
             case "/bugun" -> handleScheduleCommand(chatId, "today");
             case "/ertaga" -> handleScheduleCommand(chatId, "tomorrow");
             case "/hafta", "/haftalik" -> handleScheduleCommand(chatId, "week");
+            case "/hozir", "/status", "/live" -> handleLiveStatusCommand(chatId, null);
+            case "/sumka", "/backpack" -> handleBackpackCommand(chatId, null, "tomorrow");
             case "/sinf", "/profil" -> handleClassInfoCommand(chatId);
             case "/vaqtlar", "/qongiroq" -> handleBellScheduleCommand(chatId);
             case "/sozlamalar", "/settings" -> sendSettingsMessage(chatId, null);
+            case "/myid", "/id" -> handleMyIdCommand(chatId);
+            case "/elon", "/broadcast" -> handleAdminBroadcast(chatId, text);
+            case "/statistika", "/stats" -> handleAdminStats(chatId);
             case "/yordam", "/help" -> handleHelpCommand(chatId);
             default -> handleDirectTextInput(chatId, text);
         }
@@ -104,10 +123,12 @@ public class SchoolBot extends TelegramLongPollingBot {
     private void handleStartCommand(Long chatId) {
         UserProfile profile = userService.getProfile(chatId);
         String response = "Assalomu alaykum. 8-maktab axborot botiga xush kelibsiz.\n\n"
-                + "Bot orqali dars jadvali va qo'ng'iroqlar vaqtini bilib olishingiz mumkin.\n\n"
+                + "Bot orqali dars jadvali, jonli dars holati, sumka tayyorlash va qo'ng'iroqlar vaqtini bilib olishingiz mumkin.\n\n"
                 + (profile != null
                 ? "Siz ulangan sinf: " + profile.getClassName() + " (" + profile.getShiftDisplayName() + ")\n\n"
-                + "Buyruqlar:\n"
+                + "Asosiy buyruqlar:\n"
+                + "/hozir - Hozirgi dars holati\n"
+                + "/sumka - Ertangi sumka anjomlari\n"
                 + "/jadval - Dars jadvali\n"
                 + "/bugun - Bugungi darslar\n"
                 + "/ertaga - Ertangi darslar\n"
@@ -123,6 +144,86 @@ public class SchoolBot extends TelegramLongPollingBot {
             sendMessage(chatId, "Sinf tanlanmagan. Iltimos, avval /register orqali sinfingizni tanlang.");
         } else {
             sendScheduleMessage(chatId, null, profile.getClassName(), option);
+        }
+    }
+
+    private void handleLiveStatusCommand(Long chatId, Integer editMessageId) {
+        UserProfile profile = userService.getProfile(chatId);
+        if (profile == null) {
+            sendMessage(chatId, "Sinf tanlanmagan. Iltimos, avval /register orqali sinfingizni tanlang.");
+            return;
+        }
+
+        LocalDate today = LocalDate.now(SCHOOL_ZONE);
+        LocalTime now = LocalTime.now(SCHOOL_ZONE);
+        String liveText = scheduleService.getLiveStatusText(
+                profile.getClassName(),
+                profile.getShift(),
+                today.getDayOfWeek(),
+                now
+        );
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        rows.add(List.of(
+                createButton("Yangilash", "live_refresh"),
+                createButton("Bugungi darslar", "sch_day:today")
+        ));
+        rows.add(List.of(
+                createButton("Sumka", "sch_sumka:tomorrow"),
+                createButton("Dars vaqtlari", "vaqtlar_shift:" + profile.getShift())
+        ));
+        markup.setKeyboard(rows);
+
+        if (editMessageId != null) {
+            editMessage(chatId, editMessageId, liveText, markup);
+        } else {
+            sendMessage(chatId, liveText, markup);
+        }
+    }
+
+    private void handleBackpackCommand(Long chatId, Integer editMessageId, String dayOption) {
+        UserProfile profile = userService.getProfile(chatId);
+        if (profile == null) {
+            sendMessage(chatId, "Sinf tanlanmagan. Iltimos, avval /register orqali sinfingizni tanlang.");
+            return;
+        }
+
+        LocalDate today = LocalDate.now(SCHOOL_ZONE);
+        DayOfWeek targetDow;
+
+        if ("today".equalsIgnoreCase(dayOption)) {
+            targetDow = today.getDayOfWeek();
+        } else {
+            LocalDate tomorrow = today.plusDays(1);
+            if (tomorrow.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                tomorrow = tomorrow.plusDays(1);
+            } else if (today.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                tomorrow = today.plusDays(1);
+            }
+            targetDow = tomorrow.getDayOfWeek();
+        }
+
+        String backpackText = scheduleService.getBackpackChecklist(profile.getClassName(), targetDow);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        rows.add(List.of(
+                createButton("Ertaga uchun", "sumka_day:tomorrow"),
+                createButton("Bugun uchun", "sumka_day:today")
+        ));
+        rows.add(List.of(
+                createButton("Hozirgi dars", "sch_live"),
+                createButton("Dars jadvali", "sch_day:today")
+        ));
+        markup.setKeyboard(rows);
+
+        if (editMessageId != null) {
+            editMessage(chatId, editMessageId, backpackText, markup);
+        } else {
+            sendMessage(chatId, backpackText, markup);
         }
     }
 
@@ -147,18 +248,138 @@ public class SchoolBot extends TelegramLongPollingBot {
         sendBellScheduleMessage(chatId, null, shift);
     }
 
+    private void handleMyIdCommand(Long chatId) {
+        String msg = "Sizning Telegram ID raqamingiz: " + chatId + "\n\n"
+                + "(Maktab ma'muri sifatida belgilash uchun ushbu ID ni bot sozlamalaridagi ADMIN_CHAT_ID o'zgaruvchisiga kiriting).";
+        sendMessage(chatId, msg);
+    }
+
+    private boolean isAdmin(Long chatId) {
+        return adminChatIds.contains(chatId);
+    }
+
+    private void handleAdminBroadcast(Long chatId, String text) {
+        if (!isAdmin(chatId)) {
+            sendMessage(chatId, "Ushbu buyruq faqat maktab ma'muri uchun mo'ljallangan.");
+            return;
+        }
+
+        String[] parts = text.split("\\s+", 2);
+        if (parts.length < 2 || parts[1].isBlank()) {
+            sendMessage(chatId, "E'lon yuborish tartibi:\n/elon <xabar matni>\n\nMasalan:\n/elon Ertaga maktabimizda sport musobaqasi bo'lib o'tadi.");
+            return;
+        }
+
+        String announcement = parts[1].trim();
+        String broadcastText = "E'lon!\n\n" + announcement + "\n\n— Maktab ma'muriyati";
+
+        Map<Long, UserProfile> allProfiles = userService.getAllProfiles();
+        int total = allProfiles.size();
+        if (total == 0) {
+            sendMessage(chatId, "Ro'yxatdan o'tgan foydalanuvchilar topilmadi.");
+            return;
+        }
+
+        sendMessage(chatId, "E'lon " + total + " ta foydalanuvchiga yuborilmoqda...");
+
+        int sent = 0;
+        int failed = 0;
+
+        for (Long targetChatId : allProfiles.keySet()) {
+            try {
+                SendMessage sm = new SendMessage();
+                sm.setChatId(targetChatId.toString());
+                sm.setText(broadcastText);
+                execute(sm);
+                sent++;
+            } catch (TelegramApiException e) {
+                failed++;
+                handleTelegramError(targetChatId, e);
+            }
+        }
+
+        String report = "E'lon tarqatish yakunlandi.\n\n"
+                + "Yetkazildi: " + sent + " ta\n"
+                + "Yetib bormadi (bot bloklangan): " + failed + " ta\n"
+                + "Jami: " + total + " ta";
+        sendMessage(chatId, report);
+    }
+
+    private void handleAdminStats(Long chatId) {
+        if (!isAdmin(chatId)) {
+            sendMessage(chatId, "Ushbu buyruq faqat maktab ma'muri uchun mo'ljallangan.");
+            return;
+        }
+
+        Map<Long, UserProfile> allProfiles = userService.getAllProfiles();
+        int total = allProfiles.size();
+
+        int morningCount = 0;
+        int afternoonCount = 0;
+        int bellEnabledCount = 0;
+        Map<String, Integer> classCounts = new TreeMap<>();
+
+        for (UserProfile p : allProfiles.values()) {
+            if ("afternoon".equalsIgnoreCase(p.getShift())) {
+                afternoonCount++;
+            } else {
+                morningCount++;
+            }
+            if (p.isBellNotifications()) {
+                bellEnabledCount++;
+            }
+            String c = p.getClassName() != null ? p.getClassName() : "Noma'lum";
+            classCounts.put(c, classCounts.getOrDefault(c, 0) + 1);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("8-Maktab Boti Statistikasi:\n\n");
+        sb.append("Jami foydalanuvchilar: ").append(total).append(" ta\n");
+
+        if (total > 0) {
+            int morningPct = (int) Math.round((morningCount * 100.0) / total);
+            int afternoonPct = (int) Math.round((afternoonCount * 100.0) / total);
+            int bellPct = (int) Math.round((bellEnabledCount * 100.0) / total);
+
+            sb.append("• 1-smena: ").append(morningCount).append(" ta (").append(morningPct).append("%)\n");
+            sb.append("• 2-smena: ").append(afternoonCount).append(" ta (").append(afternoonPct).append("%)\n");
+            sb.append("• Bildirishnomalar yoqilgan: ").append(bellEnabledCount).append(" ta (").append(bellPct).append("%)\n\n");
+
+            sb.append("Sinflar bo'yicha taqsimot:\n");
+            List<Map.Entry<String, Integer>> sorted = new ArrayList<>(classCounts.entrySet());
+            sorted.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
+
+            for (Map.Entry<String, Integer> entry : sorted) {
+                sb.append("• ").append(entry.getKey()).append(": ").append(entry.getValue()).append(" ta\n");
+            }
+        }
+
+        sendMessage(chatId, sb.toString());
+    }
+
     private void handleHelpCommand(Long chatId) {
-        sendMessage(chatId,
-                "Buyruqlar ro'yxati:\n\n"
-                        + "/jadval - Dars jadvalini ko'rish\n"
-                        + "/bugun - Bugungi darslar\n"
-                        + "/ertaga - Ertangi darslar\n"
-                        + "/hafta - Haftalik to'liq jadval\n"
-                        + "/sinf - Joriy sinf va smena ma'lumoti\n"
-                        + "/register - Sinf va smenani tanlash\n"
-                        + "/vaqtlar - Qo'ng'iroqlar va dars vaqtlari\n"
-                        + "/sozlamalar - Profil va bildirishnomalarni sozlash\n"
-                        + "/yordam - Ushbu yordam xabari");
+        StringBuilder sb = new StringBuilder();
+        sb.append("Buyruqlar ro'yxati:\n\n")
+                .append("/jadval - Dars jadvalini ko'rish\n")
+                .append("/hozir - Hozirgi dars holati va vaqt hisobi\n")
+                .append("/sumka - Ertangi darslar va sumka anjomlari\n")
+                .append("/bugun - Bugungi darslar\n")
+                .append("/ertaga - Ertangi darslar\n")
+                .append("/hafta - Haftalik to'liq jadval\n")
+                .append("/sinf - Joriy sinf va smena ma'lumoti\n")
+                .append("/register - Sinf va smenani tanlash\n")
+                .append("/vaqtlar - Qo'ng'iroqlar va dars vaqtlari\n")
+                .append("/sozlamalar - Profil va bildirishnomalarni sozlash\n")
+                .append("/myid - Telegram ID raqamingiz\n")
+                .append("/yordam - Ushbu yordam xabari\n");
+
+        if (isAdmin(chatId)) {
+            sb.append("\nMa'mur buyruqlari:\n")
+                    .append("/elon <matn> - Maktab bo'yicha e'lon yuborish\n")
+                    .append("/statistika - Bot statistikasi");
+        }
+
+        sendMessage(chatId, sb.toString());
     }
 
     private void handleDirectTextInput(Long chatId, String text) {
@@ -223,11 +444,15 @@ public class SchoolBot extends TelegramLongPollingBot {
 
             InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-            rows.add(List.of(createButton("Bugungi jadval", "sch_day:today")));
             rows.add(List.of(
-                    createButton("Dars vaqtlari", "vaqtlar_shift:" + shift),
-                    createButton("Sozlamalar", "open_settings")
+                    createButton("Bugungi jadval", "sch_day:today"),
+                    createButton("Hozirgi holat", "sch_live")
             ));
+            rows.add(List.of(
+                    createButton("Sumka", "sch_sumka:tomorrow"),
+                    createButton("Dars vaqtlari", "vaqtlar_shift:" + shift)
+            ));
+            rows.add(List.of(createButton("Sozlamalar", "open_settings")));
             markup.setKeyboard(rows);
 
             editMessage(chatId, messageId, text, markup);
@@ -239,6 +464,14 @@ public class SchoolBot extends TelegramLongPollingBot {
                 return;
             }
             sendScheduleMessage(chatId, messageId, profile.getClassName(), dayOption);
+        } else if (data.equals("live_refresh") || data.equals("sch_live")) {
+            handleLiveStatusCommand(chatId, messageId);
+        } else if (data.startsWith("sumka_day:")) {
+            String dayOption = data.substring("sumka_day:".length());
+            handleBackpackCommand(chatId, messageId, dayOption);
+        } else if (data.startsWith("sch_sumka:")) {
+            String dayOption = data.substring("sch_sumka:".length());
+            handleBackpackCommand(chatId, messageId, dayOption);
         } else if (data.startsWith("vaqtlar_shift:")) {
             String shift = data.substring("vaqtlar_shift:".length());
             sendBellScheduleMessage(chatId, messageId, shift);
@@ -259,30 +492,9 @@ public class SchoolBot extends TelegramLongPollingBot {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        rows.add(List.of(createButton("Boshlang'ich (1-4 sinflar) [Tez kunda]", "reg_group:1-4")));
-        rows.add(List.of(createButton("O'rta maktab (5-8 sinflar)", "reg_group:5-8")));
-        rows.add(List.of(createButton("Yuqori sinflar (9-11 sinflar)", "reg_group:9-11")));
-
-        markup.setKeyboard(rows);
-
-        if (editMessageId != null) {
-            editMessage(chatId, editMessageId, text, markup);
-        } else {
-            sendMessage(chatId, text, markup);
-        }
-    }
-
-    private void sendPrimaryComingSoon(Long chatId, Integer editMessageId) {
-        String text = "Boshlang'ich sinflar (1-4 sinflar)\n\n"
-                + "Ushbu sinflar uchun dars jadvali hali kiritilmagan (Tez kunda).\n\n"
-                + "Iltimos, boshqa toifani tanlang:";
-
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
-        rows.add(List.of(createButton("O'rta maktab (5-8 sinflar)", "reg_group:5-8")));
-        rows.add(List.of(createButton("Yuqori sinflar (9-11 sinflar)", "reg_group:9-11")));
-        rows.add(List.of(createButton("Orqaga", "reg_group:back")));
+        rows.add(List.of(createButton("5-8 sinflar", "reg_group:5-8")));
+        rows.add(List.of(createButton("9-11 sinflar", "reg_group:9-11")));
+        rows.add(List.of(createButton("1-4 boshlang'ich (Tez kunda)", "reg_group:1-4")));
 
         markup.setKeyboard(rows);
 
@@ -295,45 +507,55 @@ public class SchoolBot extends TelegramLongPollingBot {
 
     private void sendGradeSelection(Long chatId, Integer editMessageId, String group) {
         if ("1-4".equals(group)) {
-            sendPrimaryComingSoon(chatId, editMessageId);
+            String text = "Boshlang'ich (1-4) sinflar dars jadvali hali maktab tomonidan taqdim etilmagan.\n\n"
+                    + "Tez kunda kiritiladi. Hozircha 5-11 sinflar mavjud.";
+            InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+            markup.setKeyboard(List.of(List.of(createButton("Orqaga", "reg_group:back"))));
+            editMessage(chatId, editMessageId, text, markup);
             return;
         }
 
-        int startGrade;
-        int endGrade;
-
-        switch (group) {
-            case "5-8" -> {
-                startGrade = 5;
-                endGrade = 8;
-            }
-            case "9-11" -> {
-                startGrade = 9;
-                endGrade = 11;
-            }
-            default -> {
-                sendCategorySelection(chatId, editMessageId);
-                return;
-            }
-        }
-
         String text = group + " sinflar bo'yicha sinfingizni tanlang:";
+
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        String[] letters = {"A", "B", "D"};
-
-        for (int g = startGrade; g <= endGrade; g++) {
-            List<InlineKeyboardButton> row = new ArrayList<>();
-            for (String letter : letters) {
-                String className = g + "-" + letter;
-                if (scheduleService.hasClass(className)) {
-                    row.add(createButton(className, "reg_class:" + className));
-                }
-            }
-            if (!row.isEmpty()) {
-                rows.add(row);
-            }
+        if ("5-8".equals(group)) {
+            rows.add(List.of(
+                    createButton("5-A", "reg_class:5-A"),
+                    createButton("5-B", "reg_class:5-B"),
+                    createButton("5-D", "reg_class:5-D")
+            ));
+            rows.add(List.of(
+                    createButton("6-A", "reg_class:6-A"),
+                    createButton("6-B", "reg_class:6-B")
+            ));
+            rows.add(List.of(
+                    createButton("7-A", "reg_class:7-A"),
+                    createButton("7-B", "reg_class:7-B"),
+                    createButton("7-D", "reg_class:7-D")
+            ));
+            rows.add(List.of(
+                    createButton("8-A", "reg_class:8-A"),
+                    createButton("8-B", "reg_class:8-B"),
+                    createButton("8-D", "reg_class:8-D")
+            ));
+        } else if ("9-11".equals(group)) {
+            rows.add(List.of(
+                    createButton("9-A", "reg_class:9-A"),
+                    createButton("9-B", "reg_class:9-B"),
+                    createButton("9-D", "reg_class:9-D")
+            ));
+            rows.add(List.of(
+                    createButton("10-A", "reg_class:10-A"),
+                    createButton("10-B", "reg_class:10-B"),
+                    createButton("10-D", "reg_class:10-D")
+            ));
+            rows.add(List.of(
+                    createButton("11-A", "reg_class:11-A"),
+                    createButton("11-B", "reg_class:11-B"),
+                    createButton("11-D", "reg_class:11-D")
+            ));
         }
 
         rows.add(List.of(createButton("Orqaga", "reg_group:back")));
@@ -343,7 +565,8 @@ public class SchoolBot extends TelegramLongPollingBot {
     }
 
     private void sendShiftSelection(Long chatId, Integer editMessageId, String className) {
-        String text = "Sinf: " + className + "\n\nO'qish smenasini tanlang:";
+        String text = "Tanlangan sinf: " + className + "\n\nQaysi smenada o'qiysiz?";
+
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
@@ -393,7 +616,6 @@ public class SchoolBot extends TelegramLongPollingBot {
             LocalDate tomorrow = today.plusDays(1);
             DayOfWeek tomorrowDow = tomorrow.getDayOfWeek();
             if (tomorrowDow == DayOfWeek.SUNDAY) {
-                tomorrow = tomorrow.plusDays(1);
                 tomorrowDow = DayOfWeek.MONDAY;
                 scheduleText = "Ertaga yakshanba (dam olish kuni).\nDushanba kungi dars jadvali:\n\n"
                         + scheduleService.getDaySchedule(className, tomorrowDow);
@@ -410,7 +632,6 @@ public class SchoolBot extends TelegramLongPollingBot {
                         + scheduleService.getDaySchedule(className, dow);
             }
         } else {
-            // Check if option is a specific day of the week
             try {
                 DayOfWeek selectedDay = DayOfWeek.valueOf(option.toUpperCase());
                 scheduleText = scheduleService.getDayName(selectedDay) + " kungi dars jadvali:\n\n"
@@ -426,14 +647,14 @@ public class SchoolBot extends TelegramLongPollingBot {
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Quick navigation: Today, Tomorrow, Week
+        // Navigation 1: Today, Tomorrow, Week
         rows.add(List.of(
                 createButton("Bugun", "sch_day:today"),
                 createButton("Ertaga", "sch_day:tomorrow"),
                 createButton("Haftalik", "sch_day:week")
         ));
 
-        // Day by day selector: Dush, Sesh, Chor, Pay, Juma, Shan
+        // Navigation 2: Days of week
         rows.add(List.of(
                 createButton("Dush", "sch_day:MONDAY"),
                 createButton("Sesh", "sch_day:TUESDAY"),
@@ -443,7 +664,13 @@ public class SchoolBot extends TelegramLongPollingBot {
                 createButton("Shan", "sch_day:SATURDAY")
         ));
 
-        // Bell timings and settings
+        // Navigation 3: Live & Backpack
+        rows.add(List.of(
+                createButton("Hozirgi dars", "sch_live"),
+                createButton("Sumka", "sch_sumka:tomorrow")
+        ));
+
+        // Navigation 4: Bells & Settings
         rows.add(List.of(
                 createButton("Dars vaqtlari", "vaqtlar_shift:" + currentShift),
                 createButton("Sozlamalar", "open_settings")

@@ -1,6 +1,8 @@
 package org.paper;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.paper.bot.SchoolBot;
 import org.paper.service.BellNotificationService;
@@ -41,11 +43,31 @@ public class Main {
             return;
         }
 
+        String adminChatIdStr = System.getenv("ADMIN_CHAT_ID");
+        if (adminChatIdStr == null || adminChatIdStr.isBlank()) {
+            adminChatIdStr = dotenv.get("ADMIN_CHAT_ID");
+        }
+
+        Set<Long> adminChatIds = new HashSet<>();
+        if (adminChatIdStr != null && !adminChatIdStr.isBlank()) {
+            for (String part : adminChatIdStr.split("[,;\\s]+")) {
+                try {
+                    adminChatIds.add(Long.parseLong(part.trim()));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        if (adminChatIds.isEmpty()) {
+            log.info("ADMIN_CHAT_ID belgilanmagan. Ma'mur buyruqlari (/elon, /statistika) uchun .env ga ADMIN_CHAT_ID=<chat_id> kiriting.");
+        } else {
+            log.info("Maktab ma'mur chat ID lari yuklandi: {}", adminChatIds);
+        }
+
         ObjectMapper objectMapper = new ObjectMapper();
         UserService userService = new UserService(REGISTRATIONS_FILE, objectMapper);
         ScheduleService scheduleService = new ScheduleService(SCHEDULES_FILE, objectMapper);
 
-        SchoolBot bot = new SchoolBot(botToken, botUsername, userService, scheduleService);
+        SchoolBot bot = new SchoolBot(botToken, botUsername, userService, scheduleService, adminChatIds);
 
         BellNotificationService bellNotificationService =
                 new BellNotificationService(userService, bot::sendDirectMessage);
