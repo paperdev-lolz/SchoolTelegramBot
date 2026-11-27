@@ -1,0 +1,17 @@
+{
+  "949944441" : {
+    "className" : "8-B",
+    "shift" : "morning",
+    "bellNotifications" : true
+  },
+  "7841389245" : {
+    "className" : "6-B",
+    "shift" : "afternoon",
+    "bellNotifications" : true
+  },
+  "1975778461" : {
+    "className" : "8-B",
+    "shift" : "morning",
+    "bellNotifications" : false
+  }
+}

@@ -1,0 +1,942 @@
+{
+  "8-A": {
+    "Monday": [
+      "Kelajak soati",
+      "Geometriya",
+      "Adabiyot",
+      "Algebra",
+      "Chizmachilik",
+      "Iqtisod / Geografiya"
+    ],
+    "Tuesday": [
+      "Ona tili",
+      "Kimyo",
+      "Algebra",
+      "Ingliz tili",
+      "Texnologiya",
+      "Jismoniy tarbiya"
+    ],
+    "Wednesday": [
+      "Ona tili",
+      "Informatika",
+      "Davlat va huquq asoslari",
+      "Tarbiya",
+      "Rus tili"
+    ],
+    "Thursday": [
+      "Kimyo",
+      "Fizika",
+      "Adabiyot",
+      "Ingliz tili",
+      "Geografiya",
+      "Jismoniy tarbiya"
+    ],
+    "Friday": [
+      "Ona tili",
+      "Jaxon tarixi",
+      "Geometriya",
+      "Biologiya",
+      "Fizika",
+      "O`zbekiston tarixi"
+    ],
+    "Saturday": [
+      "Algebra",
+      "Biologiya",
+      "O`zbekiston tarixi",
+      "Ingliz tili",
+      "Rus tili"
+    ]
+  },
+  "8-B": {
+    "Monday": [
+      "Kelajak soati",
+      "Ona tili",
+      "Adabiyot",
+      "Iqtisod / Geografiya",
+      "Algebra",
+      "Jismoniy tarbiya"
+    ],
+    "Tuesday": [
+      "Kimyo",
+      "Geografiya",
+      "Biologiya",
+      "Chizmachilik",
+      "Geometriya"
+    ],
+    "Wednesday": [
+      "Algebra",
+      "Tarbiya",
+      "Informatika",
+      "Davlat va huquq asoslari",
+      "Ingliz tili",
+      "Rus tili"
+    ],
+    "Thursday": [
+      "Ona tili",
+      "Kimyo",
+      "Ingliz tili",
+      "Adabiyot",
+      "O`zbekiston tarixi",
+      "Texnologiya"
+    ],
+    "Friday": [
+      "Algebra",
+      "Jismoniy tarbiya",
+      "Fizika",
+      "Jaxon tarixi",
+      "Biologiya"
+    ],
+    "Saturday": [
+      "O`zbekiston tarixi",
+      "Ona tili",
+      "Ingliz tili",
+      "Rus tili",
+      "Geometriya",
+      "Fizika"
+    ]
+  },
+  "8-D": {
+    "Monday": [
+      "Kelajak soati",
+      "Algebra",
+      "Geometriya",
+      "Rus tili",
+      "Iqtisod / Geografiya",
+      "Ona tili"
+    ],
+    "Tuesday": [
+      "Nemis tili",
+      "Algebra",
+      "Davlat va huquq asoslari",
+      "Texnologiya",
+      "Geografiya"
+    ],
+    "Wednesday": [
+      "Informatika",
+      "Algebra",
+      "Tarbiya",
+      "Jismoniy tarbiya",
+      "Nemis tili",
+      "Adabiyot"
+    ],
+    "Thursday": [
+      "Adabiyot",
+      "Chizmachilik",
+      "Jismoniy tarbiya",
+      "Rus tili",
+      "Ona tili",
+      "Fizika"
+    ],
+    "Friday": [
+      "Fizika",
+      "Kimyo",
+      "O`zbekiston tarixi",
+      "Geometriya",
+      "Jaxon tarixi",
+      "Biologiya"
+    ],
+    "Saturday": [
+      "Kimyo",
+      "O`zbekiston tarixi",
+      "Nemis tili",
+      "Ona tili",
+      "Biologiya"
+    ]
+  },
+  "9-A": {
+    "Monday": [
+      "Kelajak soati",
+      "Adabiyot",
+      "Algebra",
+      "Rus tili",
+      "Geografiya / Iqtisod",
+      "Kimyo"
+    ],
+    "Tuesday": [
+      "Fizika",
+      "Nemis tili",
+      "Geografiya",
+      "Algebra",
+      "Jismoniy tarbiya",
+      "Davlat va huquq asoslari"
+    ],
+    "Wednesday": [
+      "Geometriya",
+      "Texnologiya",
+      "O`zbekiston tarixi",
+      "Nemis tili",
+      "Ona tili",
+      "Jismoniy tarbiya"
+    ],
+    "Thursday": [
+      "Biologiya",
+      "Ona tili",
+      "Chizmachilik",
+      "Biologiya",
+      "Fizika"
+    ],
+    "Friday": [
+      "O`zbekiston tarixi",
+      "Informatika",
+      "Kimyo",
+      "Adabiyot",
+      "Tarbiya",
+      "Jaxon tarixi"
+    ],
+    "Saturday": [
+      "Geometriya",
+      "Algebra",
+      "Ona tili",
+      "Nemis tili",
+      "Informatika",
+      "Rus tili"
+    ]
+  },
+  "9-B": {
+    "Monday": [
+      "Kelajak soati",
+      "Algebra",
+      "Kimyo",
+      "Jismoniy tarbiya",
+      "Rus tili",
+      "Ingliz tili"
+    ],
+    "Tuesday": [
+      "Algebra",
+      "Geometriya",
+      "Jaxon tarixi",
+      "Geografiya",
+      "Fizika",
+      "O`zbekiston tarixi"
+    ],
+    "Wednesday": [
+      "Tarbiya",
+      "Algebra",
+      "Ona tili",
+      "Texnologiya",
+      "Ingliz tili",
+      "Adabiyot"
+    ],
+    "Thursday": [
+      "Chizmachilik",
+      "Fizika",
+      "Davlat va huquq asoslari",
+      "Ona tili",
+      "Biologiya",
+      "Geografiya"
+    ],
+    "Friday": [
+      "Biologiya",
+      "Kimyo",
+      "Adabiyot",
+      "Informatika",
+      "O`zbekiston tarixi",
+      "Jismoniy tarbiya"
+    ],
+    "Saturday": [
+      "Ona tili",
+      "Ingliz tili",
+      "Informatika",
+      "Rus tili",
+      "Geometriya",
+      "Iqtisod"
+    ]
+  },
+  "9-D": {
+    "Monday": [
+      "Kelajak soati",
+      "Rus tili",
+      "Jismoniy tarbiya",
+      "Kimyo",
+      "Biologiya",
+      "Informatika"
+    ],
+    "Tuesday": [
+      "Ingliz tili",
+      "Fizika",
+      "Texnologiya",
+      "Algebra",
+      "Jaxon tarixi",
+      "Geometriya"
+    ],
+    "Wednesday": [
+      "Adabiyot",
+      "Ingliz tili",
+      "Chizmachilik",
+      "Ona tili",
+      "Algebra",
+      "Tarbiya"
+    ],
+    "Thursday": [
+      "Geografiya",
+      "Ingliz tili",
+      "Biologiya",
+      "Ona tili",
+      "O`zbekiston tarixi"
+    ],
+    "Friday": [
+      "Kimyo",
+      "Adabiyot",
+      "Algebra",
+      "Jismoniy tarbiya",
+      "Davlat va huquq asoslari",
+      "Fizika"
+    ],
+    "Saturday": [
+      "Informatika",
+      "Rus tili",
+      "O`zbekiston tarixi",
+      "Geometriya",
+      "Ona tili",
+      "Iqtisod / Geografiya"
+    ]
+  },
+  "10-A": {
+    "Monday": [
+      "Kelajak soati",
+      "ChYOT",
+      "Rus tili",
+      "Fizika",
+      "Informatika",
+      "Ingliz tili"
+    ],
+    "Tuesday": [
+      "Geografiya",
+      "Algebra",
+      "Geometriya",
+      "Biologiya",
+      "Jaxon tarixi"
+    ],
+    "Wednesday": [
+      "Ingliz tili",
+      "Geometriya",
+      "ChYOT",
+      "Ona tili",
+      "Jismoniy tarbiya"
+    ],
+    "Thursday": [
+      "Fizika",
+      "Biologiya",
+      "Adabiyot",
+      "Geografiya",
+      "O`zbekiston tarixi"
+    ],
+    "Friday": [
+      "Kimyo",
+      "Tarbiya",
+      "Informatika",
+      "Algebra",
+      "Adabiyot",
+      "Davlat va huquq asoslari"
+    ],
+    "Saturday": [
+      "Ona tili",
+      "Informatika",
+      "Rus tili",
+      "Algebra",
+      "Kimyo"
+    ]
+  },
+  "10-B": {
+    "Monday": [
+      "Kelajak soati",
+      "Fizika",
+      "Informatika",
+      "Algebra",
+      "Geometriya",
+      "Rus tili"
+    ],
+    "Tuesday": [
+      "Algebra",
+      "Geografiya",
+      "Geometriya",
+      "Jismoniy tarbiya",
+      "Biologiya",
+      "ChYOT"
+    ],
+    "Wednesday": [
+      "Tarbiya",
+      "Ona tili",
+      "Adabiyot",
+      "O`zbekiston tarixi",
+      "Ingliz tili"
+    ],
+    "Thursday": [
+      "Geografiya",
+      "Jismoniy tarbiya",
+      "Kimyo",
+      "Biologiya",
+      "ChYOT"
+    ],
+    "Friday": [
+      "Jaxon tarixi",
+      "Fizika",
+      "Davlat va huquq asoslari",
+      "Adabiyot",
+      "Informatika",
+      "Ona tili"
+    ],
+    "Saturday": [
+      "Rus tili",
+      "Kimyo",
+      "Algebra",
+      "Ingliz tili"
+    ]
+  },
+  "10-D": {
+    "Monday": [
+      "Kelajak soati",
+      "Ingliz tili",
+      "Rus tili",
+      "Informatika",
+      "Kimyo"
+    ],
+    "Tuesday": [
+      "Geografiya",
+      "Biologiya",
+      "ChYOT",
+      "Davlat va huquq asoslari",
+      "Ingliz tili"
+    ],
+    "Wednesday": [
+      "Ona tili",
+      "Jismoniy tarbiya",
+      "Tarbiya",
+      "Algebra",
+      "ChYOT"
+    ],
+    "Thursday": [
+      "Jismoniy tarbiya",
+      "Geografiya",
+      "Adabiyot",
+      "Fizika",
+      "Rus tili"
+    ],
+    "Friday": [
+      "Algebra",
+      "Jaxon tarixi",
+      "Kimyo",
+      "O`zbekiston tarixi",
+      "Geometriya",
+      "Fizika"
+    ],
+    "Saturday": [
+      "Algebra",
+      "Ona tili",
+      "Adabiyot",
+      "Biologiya",
+      "Geometriya",
+      "Informatika"
+    ]
+  },
+  "11-A": {
+    "Monday": [
+      "Kelajak soati",
+      "Kimyo",
+      "Ingliz tili",
+      "ChYOT",
+      "Fizika"
+    ],
+    "Tuesday": [
+      "Jismoniy tarbiya",
+      "Davlat va huquq asoslari",
+      "Ingliz tili",
+      "Jaxon tarixi",
+      "Geometriya"
+    ],
+    "Wednesday": [
+      "Geometriya",
+      "Adabiyot",
+      "Algebra",
+      "Informatika",
+      "Rus tili"
+    ],
+    "Thursday": [
+      "ChYOT",
+      "Tadbirkorlik asoslari",
+      "O`zbekiston tarixi",
+      "Jismoniy tarbiya",
+      "Adabiyot",
+      "Kimyo"
+    ],
+    "Friday": [
+      "Informatika",
+      "Algebra",
+      "Ona tili",
+      "Fizika",
+      "Tarbiya",
+      "Biologiya"
+    ],
+    "Saturday": [
+      "Ona tili",
+      "Algebra",
+      "Rus tili",
+      "Astronomiya",
+      "Biologiya"
+    ]
+  },
+  "11-B": {
+    "Monday": [
+      "Kelajak soati",
+      "Fizika",
+      "Algebra",
+      "Biologiya",
+      "Rus tili"
+    ],
+    "Tuesday": [
+      "Davlat va huquq asoslari",
+      "Jismoniy tarbiya",
+      "O`zbekiston tarixi",
+      "Algebra",
+      "Kimyo",
+      "Tadbirkorlik asoslari"
+    ],
+    "Wednesday": [
+      "Ingliz tili",
+      "ChYOT",
+      "Jismoniy tarbiya",
+      "Ona tili",
+      "Informatika"
+    ],
+    "Thursday": [
+      "Tarbiya",
+      "Jaxon tarixi",
+      "ChYOT",
+      "Fizika",
+      "Kimyo"
+    ],
+    "Friday": [
+      "Ona tili",
+      "Algebra",
+      "Geometriya",
+      "Biologiya",
+      "Adabiyot",
+      "Informatika"
+    ],
+    "Saturday": [
+      "Geometriya",
+      "Rus tili",
+      "Ingliz tili",
+      "Adabiyot",
+      "Astronomiya"
+    ]
+  },
+  "11-D": {
+    "Monday": [
+      "Kelajak soati",
+      "Geometriya",
+      "Ingliz tili",
+      "Ona tili",
+      "Kimyo",
+      "Rus tili"
+    ],
+    "Tuesday": [
+      "Algebra",
+      "Jaxon tarixi",
+      "Jismoniy tarbiya",
+      "Informatika",
+      "Kimyo"
+    ],
+    "Wednesday": [
+      "ChYOT",
+      "Adabiyot",
+      "Ingliz tili",
+      "Algebra",
+      "Tadbirkorlik asoslari"
+    ],
+    "Thursday": [
+      "Ona tili",
+      "ChYOT",
+      "Fizika",
+      "Biologiya",
+      "Jismoniy tarbiya"
+    ],
+    "Friday": [
+      "O`zbekiston tarixi",
+      "Fizika",
+      "Tarbiya",
+      "Davlat va huquq asoslari",
+      "Biologiya",
+      "Algebra"
+    ],
+    "Saturday": [
+      "Rus tili",
+      "Astronomiya",
+      "Geometriya",
+      "Informatika",
+      "Adabiyot"
+    ]
+  },
+  "5-A": {
+    "Monday": [
+      "Kelajak soati",
+      "Nemis tili",
+      "Tasviriy san`at",
+      "Rus tili",
+      "Matematika",
+      "Jismoniy tarbiya"
+    ],
+    "Tuesday": [
+      "Texnologiya",
+      "Texnologiya",
+      "Matematika",
+      "Nemis tili"
+    ],
+    "Wednesday": [
+      "Musiqa",
+      "Tarix",
+      "Matematika",
+      "Nemis tili",
+      "Ona tili"
+    ],
+    "Thursday": [
+      "Rus tili",
+      "Tabiiy fan",
+      "Adabiyot",
+      "Nemis tili",
+      "Ona tili"
+    ],
+    "Friday": [
+      "Ona tili",
+      "Adabiyot",
+      "Matematika",
+      "Jismoniy tarbiya",
+      "Tarbiya"
+    ],
+    "Saturday": [
+      "Tabiiy fan",
+      "Informatika",
+      "Ona tili",
+      "Tarix",
+      "Matematika"
+    ]
+  },
+  "5-B": {
+    "Monday": [
+      "Kelajak soati",
+      "Tabiiy fan",
+      "Texnologiya",
+      "Texnologiya",
+      "Rus tili"
+    ],
+    "Tuesday": [
+      "Ingliz tili",
+      "Matematika",
+      "Musiqa",
+      "Matematika"
+    ],
+    "Wednesday": [
+      "Informatika",
+      "Ona tili",
+      "Ingliz tili",
+      "Ingliz tili",
+      "Tarix",
+      "Jismoniy tarbiya"
+    ],
+    "Thursday": [
+      "Ona tili",
+      "Rus tili",
+      "Tabiiy fan",
+      "Tasviriy san`at",
+      "Tarix"
+    ],
+    "Friday": [
+      "Ona tili",
+      "Tarbiya",
+      "Matematika",
+      "Adabiyot",
+      "Jismoniy tarbiya"
+    ],
+    "Saturday": [
+      "Adabiyot",
+      "Matematika",
+      "Ingliz tili",
+      "Ona tili",
+      "Matematika"
+    ]
+  },
+  "5-D": {
+    "Monday": [
+      "Kelajak soati",
+      "Jismoniy tarbiya",
+      "Rus tili",
+      "Tabiiy fan",
+      "Tasviriy san`at"
+    ],
+    "Tuesday": [
+      "Matematika",
+      "Musiqa",
+      "Matematika",
+      "Ingliz tili",
+      "Texnologiya",
+      "Texnologiya"
+    ],
+    "Wednesday": [
+      "Ingliz tili",
+      "Tarbiya",
+      "Adabiyot",
+      "Ona tili",
+      "Jismoniy tarbiya"
+    ],
+    "Thursday": [
+      "Ona tili",
+      "Ingliz tili",
+      "Adabiyot",
+      "Tarix",
+      "Tabiiy fan"
+    ],
+    "Friday": [
+      "Ona tili",
+      "Tarix",
+      "Ona tili",
+      "Matematika"
+    ],
+    "Saturday": [
+      "Matematika",
+      "Rus tili",
+      "Matematika",
+      "Ingliz tili",
+      "Informatika"
+    ]
+  },
+  "6-A": {
+    "Monday": [
+      "Kelajak soati",
+      "Matematika",
+      "Ona tili",
+      "Adabiyot",
+      "Informatika",
+      "Rus tili"
+    ],
+    "Tuesday": [
+      "Musiqa",
+      "Matematika",
+      "Texnologiya",
+      "Texnologiya",
+      "Nemis tili"
+    ],
+    "Wednesday": [
+      "Rus tili",
+      "Nemis tili",
+      "Ona tili",
+      "Matematika",
+      "Tarbiya"
+    ],
+    "Thursday": [
+      "Tabiiy fan",
+      "Tarix",
+      "Nemis tili",
+      "Jismoniy tarbiya",
+      "Tasviriy san`at"
+    ],
+    "Friday": [
+      "Jismoniy tarbiya",
+      "Adabiyot",
+      "Ona tili",
+      "Tabiiy fan",
+      "Matematika"
+    ],
+    "Saturday": [
+      "Nemis tili",
+      "Matematika",
+      "Tabiiy fan",
+      "Ona tili",
+      "Tarix"
+    ]
+  },
+  "6-B": {
+    "Monday": [
+      "Kelajak soati",
+      "Ona tili",
+      "Matematika",
+      "Informatika",
+      "Adabiyot",
+      "Tabiiy fan"
+    ],
+    "Tuesday": [
+      "Ingliz tili",
+      "Tasviriy san`at",
+      "Musiqa",
+      "Matematika",
+      "Ingliz tili"
+    ],
+    "Wednesday": [
+      "Ona tili",
+      "Rus tili",
+      "Ingliz tili",
+      "Tarix",
+      "Matematika"
+    ],
+    "Thursday": [
+      "Texnologiya",
+      "Texnologiya",
+      "Tarbiya",
+      "Tabiiy fan",
+      "Jismoniy tarbiya"
+    ],
+    "Friday": [
+      "Tarix",
+      "Tabiiy fan",
+      "Jismoniy tarbiya",
+      "Matematika",
+      "Ona tili"
+    ],
+    "Saturday": [
+      "Ingliz tili",
+      "Ona tili",
+      "Matematika",
+      "Rus tili",
+      "Adabiyot"
+    ]
+  },
+  "7-A": {
+    "Monday": [
+      "Kelajak soati",
+      "Adabiyot",
+      "Informatika",
+      "Geografiya",
+      "Fizika",
+      "Tasviriy san`at"
+    ],
+    "Tuesday": [
+      "Geografiya",
+      "Nemis tili",
+      "Kimyo",
+      "Geometriya",
+      "Algebra",
+      "Fizika"
+    ],
+    "Wednesday": [
+      "Algebra",
+      "Adabiyot",
+      "Nemis tili",
+      "Ona tili",
+      "Texnologiya",
+      "Texnologiya"
+    ],
+    "Thursday": [
+      "Jaxon tarixi",
+      "Ona tili",
+      "Rus tili",
+      "O`zbekiston tarixi",
+      "Nemis tili",
+      "Jismoniy tarbiya"
+    ],
+    "Friday": [
+      "Tarbiya",
+      "Jismoniy tarbiya",
+      "Biologiya",
+      "Kimyo",
+      "Musiqa",
+      "O`zbekiston tarixi"
+    ],
+    "Saturday": [
+      "Biologiya",
+      "Ona tili",
+      "Nemis tili",
+      "Geometriya",
+      "Rus tili",
+      "Algebra"
+    ]
+  },
+  "7-B": {
+    "Monday": [
+      "Kelajak soati",
+      "Geografiya",
+      "Jismoniy tarbiya",
+      "Algebra",
+      "Ingliz tili",
+      "Ona tili"
+    ],
+    "Tuesday": [
+      "O`zbekiston tarixi",
+      "Geometriya",
+      "Ingliz tili",
+      "Fizika",
+      "Algebra",
+      "Kimyo"
+    ],
+    "Wednesday": [
+      "Ingliz tili",
+      "Adabiyot",
+      "Texnologiya",
+      "Texnologiya",
+      "Rus tili",
+      "Ona tili"
+    ],
+    "Thursday": [
+      "Tasviriy san`at",
+      "Kimyo",
+      "Jismoniy tarbiya",
+      "Geografiya",
+      "Tarbiya",
+      "Fizika"
+    ],
+    "Friday": [
+      "Musiqa",
+      "Biologiya",
+      "O`zbekiston tarixi",
+      "Jaxon tarixi",
+      "Algebra",
+      "Ona tili"
+    ],
+    "Saturday": [
+      "Rus tili",
+      "Biologiya",
+      "Geometriya",
+      "Informatika",
+      "Ingliz tili",
+      "Adabiyot"
+    ]
+  },
+  "7-D": {
+    "Monday": [
+      "Kelajak soati",
+      "Ingliz tili",
+      "Algebra",
+      "Fizika",
+      "Texnologiya",
+      "Texnologiya"
+    ],
+    "Tuesday": [
+      "Geometriya",
+      "Geografiya",
+      "Algebra",
+      "Ingliz tili",
+      "Kimyo",
+      "O`zbekiston tarixi"
+    ],
+    "Wednesday": [
+      "Adabiyot",
+      "Tasviriy san`at",
+      "Ona tili",
+      "Jismoniy tarbiya",
+      "Ingliz tili",
+      "Rus tili"
+    ],
+    "Thursday": [
+      "Biologiya",
+      "Geografiya",
+      "Fizika",
+      "Kimyo",
+      "Jaxon tarixi",
+      "Tarbiya"
+    ],
+    "Friday": [
+      "Biologiya",
+      "Musiqa",
+      "Ona tili",
+      "Algebra",
+      "O`zbekiston tarixi",
+      "Jismoniy tarbiya"
+    ],
+    "Saturday": [
+      "Ona tili",
+      "Adabiyot",
+      "Informatika",
+      "Ingliz tili",
+      "Geometriya",
+      "Rus tili"
+    ]
+  }
+}
